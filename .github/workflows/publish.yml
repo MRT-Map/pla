@@ -7,7 +7,7 @@ on:
 jobs:
   test:
     uses: ./.github/workflows/test.yml
-    permissions: 
+    permissions:
       contents: read
 
   version-changelog:
@@ -51,7 +51,7 @@ jobs:
       - uses: ./.github/actions/mise
         with:
           cache: false
-          envs: ''
+          envs: ""
       - run: cargo package --locked
       - uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0  # zizmor: ignore[superfluous-actions]
         with:
@@ -80,7 +80,7 @@ jobs:
 
   delete-github-release:
     runs-on: ubuntu-slim
-    needs: [ test, version-changelog, github-release, crates-io ]
+    needs: [test, version-changelog, github-release, crates-io]
     if: ${{ always() && contains(needs.*.result, 'failure') }}
     permissions:
       contents: write

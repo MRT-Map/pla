@@ -4,7 +4,7 @@ on:
   push:
     branches: ["**"]
     paths: ["**/Cargo.toml", "**/Cargo.lock"]
-    
+
 jobs:
   cargo-msrv:
     uses: iiiii7d/cargo-msrv-workflow/.github/workflows/workflow.yml@0b1dfdcd3748ba2b7d718ac41876dd277114cfb3 # main

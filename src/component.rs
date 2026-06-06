@@ -142,7 +142,9 @@ where
             .filter_map(Result::transpose)
             .collect::<Result<PlaNodeVec<T>>>()?;
 
-        if let Some(node @ PlaNode::Line { .. }) = nodes.first() {
+        if let Some(node @ (PlaNode::QuadraticBezier { .. } | PlaNode::CubicBezier { .. })) =
+            nodes.first()
+        {
             return Err(Error::FirstNodeIsCurve(format!("{node:?}")));
         }
 

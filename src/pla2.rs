@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashSet},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -18,7 +18,7 @@ pub struct Pla2Component<T: PlaNodeType> {
     r#type: String,
     layer: NotNan<f32>,
     nodes: Vec<T>,
-    tags: Vec<String>,
+    tags: HashSet<String>,
     attrs: Option<BTreeMap<String, toml::Value>>,
 }
 
@@ -81,17 +81,21 @@ impl<S: ?Sized, T: PlaNodeTypeBezier> PlaComponent<S, T> {
             description: self
                 .misc
                 .remove("description")
-                .map_or_else(String::new, |description| description.to_string()),
+                .map_or_else(String::new, |description| {
+                    description
+                        .as_str()
+                        .map_or_else(|| description.to_string(), ToOwned::to_owned)
+                }),
             r#type: format_ty(&*self.ty).into(),
             layer: self.layer,
             nodes: self.nodes.outline(tolerance),
             tags: {
-                let mut tags = Vec::new();
+                let mut tags = HashSet::new();
                 self.misc.retain(|k, v| {
                     if v.as_bool() != Some(true) {
                         return true;
                     }
-                    tags.push(k.to_owned());
+                    tags.insert(k.to_owned());
                     false
                 });
                 tags
@@ -157,5 +161,49 @@ impl<'de, T: PlaNodeType + Deserialize<'de>> Pla2File<T> {
     }
     pub fn from_msgpack(input: &'de [u8]) -> Result<Self, rmp_serde::decode::Error> {
         rmp_serde::from_slice(input)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use itertools::Itertools;
+    use ordered_float::NotNan;
+    use proptest::prelude::*;
+
+    use crate::Pla2Component;
+
+    prop_compose! {
+        fn vec2()(a in any::<f32>(), b in any::<f32>()) -> egui::Vec2 {
+            egui::vec2(a, b)
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn test_pla2to3to2(
+            namespace in ".*",
+            id in ".*",
+            display_name in ".*",
+            description in ".*",
+            r#type in ".*",
+            layer in any::<f32>(),
+            nodes in prop::collection::vec(vec2(), 0..=100),
+            tags in prop::collection::hash_set(".*", 1..=100),
+        ) {
+            let pla2 = Pla2Component::<egui::Vec2> {
+                namespace,
+                id,
+                display_name,
+                description,
+                r#type,
+                layer: NotNan::new(layer).unwrap(),
+                nodes: nodes.into_iter().dedup().collect(),
+                tags,
+                attrs: None,
+            };
+            let pla3 = pla2.as_pla3::<str, _>(|a| Some(a.into())).unwrap();
+            let result = pla3.to_pla2(str::to_owned, None).unwrap();
+            prop_assert_eq!(pla2, result);
+        }
     }
 }

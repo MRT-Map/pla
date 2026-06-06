@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 83161610e5f40cca0683cba43e456c87413c4af5ad631e45358c276c65bfda34 # shrinks to namespace = "", id = "", ty = "", display_name = "", layer = 0.0, nodes = PlaNodeVec([QuadraticBezier { label: None, ctrl: (0.0, 0.0), coord: (0.0, 0.0) }]), misc = {"": String("")}
+cc 5f6a6acb69e3905d205d1f30a4be72a0686293dbaf42370e2c3734df24cf8ffb # shrinks to namespace = "", id = "", ty = "", display_name = "", layer = 0.0, nodes = PlaNodeVec([]), misc = {}

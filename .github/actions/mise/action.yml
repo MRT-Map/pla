@@ -4,7 +4,7 @@ description: "Set up rust nightly"
 inputs:
   envs:
     description: envs
-    default: "lint"
+    default: "lint,test"
   cache:
     description: cache
     default: "true"

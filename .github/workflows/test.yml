@@ -20,5 +20,5 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/mise
         with:
-          envs: ""
-      - run: cargo test --all-features --all-targets -- --nocapture
+          envs: "test"
+      - run: cargo llvm-cov --all-features --all-targets --text -- --nocapture

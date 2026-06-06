@@ -170,29 +170,10 @@ mod test {
     use ordered_float::NotNan;
     use proptest::prelude::*;
 
-    use crate::{Error, Pla2Component};
-
-    prop_compose! {
-        fn vec2()(a in any::<f32>(), b in any::<f32>()) -> egui::Vec2 {
-            egui::vec2(a, b)
-        }
-    }
-
-    fn arb_toml() -> impl Strategy<Value = toml::Value> {
-        let leaf = prop_oneof![
-            ".*".prop_map(toml::Value::String),
-            any::<i64>().prop_map(toml::Value::Integer),
-            any::<f64>().prop_map(toml::Value::Float),
-            any::<bool>().prop_map(toml::Value::Boolean),
-        ];
-        leaf.prop_recursive(8, 256, 10, |inner| {
-            prop_oneof![
-                prop::collection::vec(inner.clone(), 0..10).prop_map(toml::Value::Array),
-                prop::collection::hash_map(".*", inner, 0..10)
-                    .prop_map(|a| toml::Value::Table(toml::Table::from_iter(a))),
-            ]
-        })
-    }
+    use crate::{
+        Error, Pla2Component,
+        test::{arb_toml, egui_vec2},
+    };
 
     proptest! {
         #[test]
@@ -203,7 +184,7 @@ mod test {
             description in ".*",
             r#type in ".*",
             layer in any::<f32>().prop_filter_map("not nan", |a| NotNan::new(a).ok()),
-            nodes in prop::collection::vec(vec2(), 0..=100),
+            nodes in prop::collection::vec(egui_vec2(), 0..=100),
             tags in prop::collection::hash_set(".*", 1..=100),
             attrs in prop::option::of(prop::collection::btree_map(".*", arb_toml(), 1..10)),
         ) {

@@ -94,7 +94,7 @@ where
         let Some(label) = split.get(i) else {
             return Ok(None);
         };
-        let Some(label) = label.strip_suffix("#") else {
+        let Some(label) = label.strip_prefix("#") else {
             return Err(Error::InvalidLabel(
                 label.to_string(),
                 InvalidLabelError::MissingPrefix,
@@ -113,12 +113,15 @@ where
     ) -> Result<(Self, Option<Error>)> {
         let mut unknown_type_error = None;
         let (nodes_str, attrs_str) = s
-            .split_once("\n---\n")
+            .split_once("---\n")
             .ok_or_else(|| Error::MissingSeparator(s.to_owned()))?;
 
         let nodes = nodes_str
             .split('\n')
             .map(|node_str| {
+                if node_str.is_empty() {
+                    return Ok(None);
+                }
                 let split = node_str.split(' ').collect::<Vec<_>>();
                 match split.len() {
                     2 | 3 => Ok(Some(PlaNode::Line {
@@ -266,14 +269,144 @@ impl<S: ?Sized, T: PlaNodeTypeGet> PlaComponent<S, T> {
 
 #[cfg(test)]
 mod test {
+    use std::{assert_matches, sync::Arc};
+
+    use ordered_float::NotNan;
     use proptest::prelude::*;
 
-    use crate::{FullId, PlaComponent};
+    use crate::{
+        Error, FullId, InvalidLabelError, InvalidLayerError, PlaComponent, PlaNode,
+        test::{arb_nodes, arb_toml},
+    };
 
     proptest! {
         #[test]
         fn test_loading_no_crash(s in ".*", namespace in ".*", id in ".*") {
             let _ = PlaComponent::<str, (f32, f32)>::load_from_string(&s, FullId::new(namespace, id), |t| Some(t.into()));
         }
+    }
+
+    proptest! {
+        #[test]
+        fn test_save_load(
+            namespace in ".*",
+            id in ".*",
+            ty in ".*",
+            display_name in ".*",
+            layer in any::<f32>().prop_filter_map("not nan", |a| NotNan::new(a).ok()),
+            nodes in arb_nodes(),
+            misc in prop::collection::btree_map(".*", arb_toml(), 0..10),
+        ) {
+            prop_assume!(nodes.first().is_none_or(|n| matches!(n, PlaNode::Line { .. })));
+            let full_id = FullId::new(namespace, id);
+            let pla3 = PlaComponent {
+                full_id: full_id.clone(),
+                ty: Arc::new(ty),
+                display_name,
+                layer,
+                nodes,
+                misc,
+            };
+            let string = pla3.save_to_string(Clone::clone).unwrap();
+            let (result, _) = PlaComponent::load_from_string(&string, full_id, |a| Some(Arc::new(a.to_owned()))).unwrap();
+            prop_assert_eq!(pla3, result);
+        }
+    }
+
+    fn load_expect_error(string: &str) -> Error {
+        PlaComponent::<String, (f32, f32)>::load_from_string(
+            string,
+            FullId::new(String::new(), String::new()),
+            |a| Some(Arc::new(a.to_owned())),
+        )
+        .unwrap_err()
+    }
+
+    #[test]
+    fn test_invalid_label_missing_prefix() {
+        let string = "0 0 abc\n---\n";
+        let result = load_expect_error(string);
+        assert_matches!(
+            result,
+            Error::InvalidLabel(_, InvalidLabelError::MissingPrefix)
+        );
+    }
+    #[test]
+    fn test_invalid_label_invalid_number() {
+        let string = "0 0 #abc\n---\n";
+        let result = load_expect_error(string);
+        assert_matches!(
+            result,
+            Error::InvalidLabel(_, InvalidLabelError::InvalidNumber(_))
+        );
+    }
+    #[test]
+    fn test_missing_separator() {
+        let string = "0 0";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::MissingSeparator(_));
+    }
+    #[test]
+    fn test_invalid_split_length_1() {
+        let string = "0\n---\n";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::InvalidSplitLength(_, 1));
+    }
+    #[test]
+    fn test_invalid_split_length_8() {
+        let string = "0 0 0 0 0 0 0 0\n---\n";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::InvalidSplitLength(_, 8));
+    }
+    #[test]
+    fn test_invalid_coordinate() {
+        let string = "0 abc\n---\n";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::InvalidCoordinate(_, _));
+    }
+    #[test]
+    fn test_first_node_is_curve_quad() {
+        let string = "0 0 0 0\n---\n";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::FirstNodeIsCurve(_));
+    }
+    #[test]
+    fn test_first_node_is_curve_cubic() {
+        let string = "0 0 0 0 0 0\n---\n";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::FirstNodeIsCurve(_));
+    }
+    #[test]
+    fn test_invalid_display_name() {
+        let string = "\n---\ndisplay_name = true";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::InvalidDisplayName(_));
+    }
+    #[test]
+    fn test_invalid_layer_neither_integer_nor_float() {
+        let string = "\n---\nlayer = true";
+        let result = load_expect_error(string);
+        assert_matches!(
+            result,
+            Error::InvalidLayer(_, InvalidLayerError::NeitherIntegerNorFloat)
+        );
+    }
+    #[test]
+    fn test_invalid_layer_is_nan() {
+        let string = "\n---\nlayer = nan";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::InvalidLayer(_, InvalidLayerError::IsNaN(_)));
+    }
+    #[test]
+    fn test_invalid_skin_type() {
+        let string = "\n---\ntype = true";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::InvalidSkinType(_));
+    }
+    #[test]
+    fn test_invalid_metadata() {
+        let string = "\n---\nabc =";
+        let result = load_expect_error(string);
+        assert_matches!(result, Error::TOMLDeserialisation(_));
     }
 }

@@ -203,13 +203,7 @@ impl<T: PlaNodeType> FromIterator<PlaNode<T>> for PlaNodeVec<T> {
 mod test {
     use proptest::prelude::*;
 
-    use crate::{PlaNode, PlaNodeVec};
-
-    prop_compose! {
-        fn vec2()(a in any::<f32>(), b in any::<f32>()) -> (f32, f32) {
-            (a, b)
-        }
-    }
+    use crate::{PlaNode, PlaNodeVec, test::vec2};
 
     proptest! {
         #[test]

@@ -73,8 +73,8 @@ impl<S: ?Sized, T: PlaNodeTypeBezier> PlaComponent<S, T> {
         mut self,
         format_ty: TS,
         tolerance: Tolerance,
-    ) -> Result<Pla2Component<T>> {
-        Ok(Pla2Component {
+    ) -> Pla2Component<T> {
+        Pla2Component {
             namespace: self.full_id.namespace,
             id: self.full_id.id,
             display_name: self.display_name,
@@ -105,13 +105,13 @@ impl<S: ?Sized, T: PlaNodeTypeBezier> PlaComponent<S, T> {
             } else {
                 Some(self.misc)
             },
-        })
+        }
     }
     pub fn as_pla2<TS: Fn(&S) -> V, V: Into<String>, Tolerance: Into<Option<f32>> + Copy>(
         &self,
         format_ty: TS,
         tolerance: Tolerance,
-    ) -> Result<Pla2Component<T>> {
+    ) -> Pla2Component<T> {
         self.clone().to_pla2(format_ty, tolerance)
     }
 }
@@ -170,12 +170,28 @@ mod test {
     use ordered_float::NotNan;
     use proptest::prelude::*;
 
-    use crate::Pla2Component;
+    use crate::{Error, Pla2Component};
 
     prop_compose! {
         fn vec2()(a in any::<f32>(), b in any::<f32>()) -> egui::Vec2 {
             egui::vec2(a, b)
         }
+    }
+
+    fn arb_toml() -> impl Strategy<Value = toml::Value> {
+        let leaf = prop_oneof![
+            ".*".prop_map(toml::Value::String),
+            any::<i64>().prop_map(toml::Value::Integer),
+            any::<f64>().prop_map(toml::Value::Float),
+            any::<bool>().prop_map(toml::Value::Boolean),
+        ];
+        leaf.prop_recursive(8, 256, 10, |inner| {
+            prop_oneof![
+                prop::collection::vec(inner.clone(), 0..10).prop_map(toml::Value::Array),
+                prop::collection::hash_map(".*", inner, 0..10)
+                    .prop_map(|a| toml::Value::Table(toml::Table::from_iter(a))),
+            ]
+        })
     }
 
     proptest! {
@@ -186,23 +202,37 @@ mod test {
             display_name in ".*",
             description in ".*",
             r#type in ".*",
-            layer in any::<f32>(),
+            layer in any::<f32>().prop_filter_map("not nan", |a| NotNan::new(a).ok()),
             nodes in prop::collection::vec(vec2(), 0..=100),
             tags in prop::collection::hash_set(".*", 1..=100),
+            attrs in prop::option::of(prop::collection::btree_map(".*", arb_toml(), 1..10)),
         ) {
+            prop_assume!(attrs.as_ref().is_none_or(|attrs| !attrs.values().any(|v| *v == toml::Value::Boolean(true))));
+            let key_already_exists_error_expected = attrs.as_ref().is_some_and(|attrs| attrs.keys().any(|k| tags.contains(k)));
             let pla2 = Pla2Component::<egui::Vec2> {
                 namespace,
                 id,
                 display_name,
                 description,
                 r#type,
-                layer: NotNan::new(layer).unwrap(),
+                layer,
                 nodes: nodes.into_iter().dedup().collect(),
                 tags,
-                attrs: None,
+                attrs,
             };
-            let pla3 = pla2.as_pla3::<str, _>(|a| Some(a.into())).unwrap();
-            let result = pla3.to_pla2(str::to_owned, None).unwrap();
+            let pla3 = match pla2.as_pla3::<str, _>(|a| Some(a.into())) {
+                Ok(a) => {
+                    prop_assert!(!key_already_exists_error_expected);
+                    a
+                }
+                Err(e) => {
+                    prop_assert!(key_already_exists_error_expected);
+                    prop_assert!(matches!(e, Error::KeyAlreadyExistsForTag(_)));
+                    return Ok(());
+                }
+            };
+
+            let result = pla3.to_pla2(str::to_owned, None);
             prop_assert_eq!(pla2, result);
         }
     }

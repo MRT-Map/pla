@@ -6,3 +6,6 @@
 # everyone who runs the test benefits from these saved cases.
 cc fe770f978fc422ba5ae93f0b7f845e1391fa6900ef693d0945d57af30e9e7c7a # shrinks to namespace = "", id = "", display_name = "", description = "¡", r#type = "", layer = 0.0
 cc dcd1c562d79a84f36af1e27563b60405c9a0897244552a0ba270133bdf48de0d # shrinks to namespace = "", id = "", display_name = "", description = "", r#type = "", layer = 0.0, nodes = [[0.0 -0.0], [0.0 -0.0]]
+cc e5b8bfb586fa9f47152c28525685a2130106dcb3004bd5d92df563d796278d64 # shrinks to namespace = "", id = "", display_name = "", description = "", r#type = "", layer = 0.0, nodes = [], tags = {""}, attrs = {}
+cc b4a112bc21e13fc66fc238b429641460f733648585bd67b160a27fd02c85a37f # shrinks to namespace = "", id = "", display_name = "", description = "", r#type = "", layer = 0.0, nodes = [], tags = {""}, attrs = Some({"": String("")})
+cc 0a042208644f1389bf62327f46f217f99a98782615b94daa6601bc07f774ab53 # shrinks to namespace = "", id = "", display_name = "", description = "", r#type = "", layer = 0.0, nodes = [], tags = {""}, attrs = Some({"¡": Boolean(true)})

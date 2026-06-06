@@ -26,9 +26,10 @@ pub(crate) mod test {
         }
     }
 
+    #[cfg(feature = "emath")]
     prop_compose! {
-        pub fn egui_vec2()(a in any::<f32>(), b in any::<f32>()) -> egui::Vec2 {
-            egui::vec2(a, b)
+        pub fn emath_vec2()(a in any::<f32>(), b in any::<f32>()) -> emath::Vec2 {
+            emath::vec2(a, b)
         }
     }
 

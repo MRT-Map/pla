@@ -172,9 +172,10 @@ mod test {
 
     use crate::{
         Error, Pla2Component,
-        test::{arb_toml, egui_vec2},
+        test::{arb_toml, emath_vec2},
     };
 
+    #[cfg(feature = "bezier-epaint")]
     proptest! {
         #[test]
         fn test_pla2to3to2(
@@ -184,13 +185,13 @@ mod test {
             description in ".*",
             r#type in ".*",
             layer in any::<f32>().prop_filter_map("not nan", |a| NotNan::new(a).ok()),
-            nodes in prop::collection::vec(egui_vec2(), 0..=100),
+            nodes in prop::collection::vec(emath_vec2(), 0..=100),
             tags in prop::collection::hash_set(".*", 1..=100),
             attrs in prop::option::of(prop::collection::btree_map(".*", arb_toml(), 1..10)),
         ) {
             prop_assume!(attrs.as_ref().is_none_or(|attrs| !attrs.values().any(|v| *v == toml::Value::Boolean(true))));
             let key_already_exists_error_expected = attrs.as_ref().is_some_and(|attrs| attrs.keys().any(|k| tags.contains(k)));
-            let pla2 = Pla2Component::<egui::Vec2> {
+            let pla2 = Pla2Component::<emath::Vec2> {
                 namespace,
                 id,
                 display_name,

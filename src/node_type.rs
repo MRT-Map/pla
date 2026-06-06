@@ -107,9 +107,9 @@ impl<CC: PlaNodeType + Display> PlaNodeTypeGet for Type<CC> {
     }
 }
 
-#[cfg(feature = "egui")]
+#[cfg(feature = "emath")]
 #[duplicate::duplicate_item(
-    Type; [egui::Pos2]; [egui::Vec2]
+    Type; [emath::Pos2]; [emath::Vec2]
 )]
 impl PlaNodeTypeNew for Type {
     type C = f32;
@@ -118,9 +118,9 @@ impl PlaNodeTypeNew for Type {
     }
 }
 
-#[cfg(feature = "egui")]
+#[cfg(feature = "emath")]
 #[duplicate::duplicate_item(
-    Type; [egui::Pos2]; [egui::Vec2]
+    Type; [emath::Pos2]; [emath::Vec2]
 )]
 impl PlaNodeTypeGet for Type {
     type C = f32;
@@ -132,9 +132,9 @@ impl PlaNodeTypeGet for Type {
     }
 }
 
-#[cfg(feature = "egui")]
-impl PlaNodeTypeRect for egui::Vec2 {
-    type Rect = egui::Rect;
+#[cfg(feature = "emath")]
+impl PlaNodeTypeRect for emath::Vec2 {
+    type Rect = emath::Rect;
     fn combine_rect(a: Self::Rect, b: Self::Rect) -> Self::Rect {
         a.union(b)
     }
@@ -148,9 +148,9 @@ impl PlaNodeTypeRect for egui::Vec2 {
         rect.center().to_vec2()
     }
 }
-#[cfg(feature = "egui")]
-impl PlaNodeTypeRect for egui::Pos2 {
-    type Rect = egui::Rect;
+#[cfg(feature = "emath")]
+impl PlaNodeTypeRect for emath::Pos2 {
+    type Rect = emath::Rect;
     fn combine_rect(a: Self::Rect, b: Self::Rect) -> Self::Rect {
         a.union(b)
     }
@@ -165,23 +165,23 @@ impl PlaNodeTypeRect for egui::Pos2 {
     }
 }
 
-#[cfg(feature = "egui")]
-impl PlaNodeTypeBezier for egui::Vec2 {
+#[cfg(feature = "bezier-epaint")]
+impl PlaNodeTypeBezier for emath::Vec2 {
     fn flatten_quadratic(
         a: Self,
         b: Self,
         c: Self,
         tolerance: impl Into<Option<f32>>,
     ) -> Vec<Self> {
-        egui::epaint::QuadraticBezierShape::from_points_stroke(
+        epaint::QuadraticBezierShape::from_points_stroke(
             [a.to_pos2(), b.to_pos2(), c.to_pos2()],
             false,
-            egui::Color32::default(),
-            egui::Stroke::default(),
+            epaint::Color32::default(),
+            epaint::Stroke::default(),
         )
         .flatten(tolerance.into())
         .into_iter()
-        .map(egui::Pos2::to_vec2)
+        .map(emath::Pos2::to_vec2)
         .collect()
     }
 
@@ -192,32 +192,32 @@ impl PlaNodeTypeBezier for egui::Vec2 {
         d: Self,
         tolerance: impl Into<Option<f32>>,
     ) -> Vec<Self> {
-        egui::epaint::CubicBezierShape::from_points_stroke(
+        epaint::CubicBezierShape::from_points_stroke(
             [a.to_pos2(), b.to_pos2(), c.to_pos2(), d.to_pos2()],
             false,
-            egui::Color32::default(),
-            egui::Stroke::default(),
+            epaint::Color32::default(),
+            epaint::Stroke::default(),
         )
         .flatten(tolerance.into())
         .into_iter()
-        .map(egui::Pos2::to_vec2)
+        .map(emath::Pos2::to_vec2)
         .collect()
     }
 }
 
-#[cfg(feature = "egui")]
-impl PlaNodeTypeBezier for egui::Pos2 {
+#[cfg(feature = "bezier-epaint")]
+impl PlaNodeTypeBezier for emath::Pos2 {
     fn flatten_quadratic(
         a: Self,
         b: Self,
         c: Self,
         tolerance: impl Into<Option<f32>>,
     ) -> Vec<Self> {
-        egui::epaint::QuadraticBezierShape::from_points_stroke(
+        epaint::QuadraticBezierShape::from_points_stroke(
             [a, b, c],
             false,
-            egui::Color32::default(),
-            egui::Stroke::default(),
+            epaint::Color32::default(),
+            epaint::Stroke::default(),
         )
         .flatten(tolerance.into())
     }
@@ -229,55 +229,55 @@ impl PlaNodeTypeBezier for egui::Pos2 {
         d: Self,
         tolerance: impl Into<Option<f32>>,
     ) -> Vec<Self> {
-        egui::epaint::CubicBezierShape::from_points_stroke(
+        epaint::CubicBezierShape::from_points_stroke(
             [a, b, c, d],
             false,
-            egui::Color32::default(),
-            egui::Stroke::default(),
+            epaint::Color32::default(),
+            epaint::Stroke::default(),
         )
         .flatten(tolerance.into())
     }
 }
 
-#[cfg(feature = "egui")]
-impl PlaNodeTypeBezierRect for egui::Vec2 {
+#[cfg(feature = "bezier-epaint")]
+impl PlaNodeTypeBezierRect for emath::Vec2 {
     fn rect_from_quadratic(a: Self, b: Self, c: Self) -> Self::Rect {
-        egui::epaint::QuadraticBezierShape::from_points_stroke(
+        epaint::QuadraticBezierShape::from_points_stroke(
             [a.to_pos2(), b.to_pos2(), c.to_pos2()],
             false,
-            egui::Color32::default(),
-            egui::Stroke::default(),
+            epaint::Color32::default(),
+            epaint::Stroke::default(),
         )
         .logical_bounding_rect()
     }
     fn rect_from_cubic(a: Self, b: Self, c: Self, d: Self) -> Self::Rect {
-        egui::epaint::CubicBezierShape::from_points_stroke(
+        epaint::CubicBezierShape::from_points_stroke(
             [a.to_pos2(), b.to_pos2(), c.to_pos2(), d.to_pos2()],
             false,
-            egui::Color32::default(),
-            egui::Stroke::default(),
+            epaint::Color32::default(),
+            epaint::Stroke::default(),
         )
         .logical_bounding_rect()
     }
 }
 
-#[cfg(feature = "egui")]
-impl PlaNodeTypeBezierRect for egui::Pos2 {
+#[cfg(feature = "bezier-epaint")]
+impl PlaNodeTypeBezierRect for emath::Pos2 {
     fn rect_from_quadratic(a: Self, b: Self, c: Self) -> Self::Rect {
-        egui::epaint::QuadraticBezierShape::from_points_stroke(
+        epaint::QuadraticBezierShape::from_points_stroke(
             [a, b, c],
             false,
-            egui::Color32::default(),
-            egui::Stroke::default(),
+            epaint::Color32::default(),
+            epaint::Stroke::default(),
         )
         .logical_bounding_rect()
     }
     fn rect_from_cubic(a: Self, b: Self, c: Self, d: Self) -> Self::Rect {
-        egui::epaint::CubicBezierShape::from_points_stroke(
+        epaint::CubicBezierShape::from_points_stroke(
             [a, b, c, d],
             false,
-            egui::Color32::default(),
-            egui::Stroke::default(),
+            epaint::Color32::default(),
+            epaint::Stroke::default(),
         )
         .logical_bounding_rect()
     }

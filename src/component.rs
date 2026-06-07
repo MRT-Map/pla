@@ -70,9 +70,12 @@ impl<S: ?Sized, T: PlaNodeType> Display for PlaComponent<S, T> {
 
 impl<S: ?Sized, T: PlaNodeType> PlaComponent<S, T> {
     #[must_use]
+    pub fn file_name(&self) -> String {
+        format!("{}.pla3", self.full_id.id)
+    }
+    #[must_use]
     pub fn path(&self, root: &Path) -> PathBuf {
-        root.join(&*self.full_id.namespace)
-            .join(format!("{}.pla3", self.full_id.id))
+        root.join(&*self.full_id.namespace).join(self.file_name())
     }
 }
 

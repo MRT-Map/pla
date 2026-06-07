@@ -1,6 +1,7 @@
 use std::{
     collections::BTreeMap,
     fmt::{Display, Formatter, Write},
+    io::{BufRead, Cursor},
     path::{Path, PathBuf},
     str::FromStr,
     sync::Arc,
@@ -108,50 +109,62 @@ where
             .map_err(|e| Error::InvalidLabel(label.to_owned(), e.into()))
             .map(Some)
     }
+    pub fn load<STR, GT: Fn(&str) -> Option<Arc<S>>>(
+        input: STR,
+        full_id: FullId,
+        get_type: GT,
+    ) -> Result<(Self, Option<Error>)>
+    where
+        Cursor<STR>: BufRead,
+    {
+        Self::load_from_buf(Cursor::new(input), full_id, get_type)
+    }
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all, fields(full_id)))]
-    pub fn load_from_string<GT: Fn(&str) -> Option<Arc<S>>>(
-        s: &str,
+    pub fn load_from_buf<B: BufRead, GT: Fn(&str) -> Option<Arc<S>>>(
+        buf: B,
         full_id: FullId,
         get_type: GT,
     ) -> Result<(Self, Option<Error>)> {
         let mut unknown_type_error = None;
-        let (nodes_str, attrs_str) = s
-            .split_once("---\n")
-            .ok_or_else(|| Error::MissingSeparator(s.to_owned()))?;
+        let mut lines = buf.lines();
 
-        let nodes = nodes_str
-            .split('\n')
-            .map(|node_str| {
-                if node_str.is_empty() {
-                    return Ok(None);
-                }
-                let split = node_str.split(' ').collect::<Vec<_>>();
-                match split.len() {
-                    2 | 3 => Ok(Some(PlaNode::Line {
-                        coord: Self::get_coord(&split, 0)?,
-                        label: Self::get_label(&split, 2)?,
-                    })),
-                    4 | 5 => Ok(Some(PlaNode::QuadraticBezier {
-                        ctrl: Self::get_coord(&split, 0)?,
-                        coord: Self::get_coord(&split, 2)?,
-                        label: Self::get_label(&split, 4)?,
-                    })),
-                    6 | 7 => Ok(Some(PlaNode::CubicBezier {
-                        ctrl1: Self::get_coord(&split, 0)?,
-                        ctrl2: Self::get_coord(&split, 2)?,
-                        coord: Self::get_coord(&split, 4)?,
-                        label: Self::get_label(&split, 6)?,
-                    })),
-                    len => Err(Error::InvalidSplitLength(node_str.to_owned(), len)),
-                }
-            })
-            .filter_map(Result::transpose)
-            .collect::<Result<PlaNodeVec<T>>>()?;
-
-        if let Some(node @ (PlaNode::QuadraticBezier { .. } | PlaNode::CubicBezier { .. })) =
-            nodes.first()
+        let mut nodes = PlaNodeVec::new();
+        while let Some(next) = lines.next().transpose()?
+            && next != "---"
         {
-            return Err(Error::FirstNodeIsCurve(format!("{node:?}")));
+            if next.is_empty() {
+                continue;
+            }
+            let split = next.split(' ').collect::<Vec<_>>();
+            let node = match split.len() {
+                2 | 3 => PlaNode::Line {
+                    coord: Self::get_coord(&split, 0)?,
+                    label: Self::get_label(&split, 2)?,
+                },
+                4 | 5 => PlaNode::QuadraticBezier {
+                    ctrl: Self::get_coord(&split, 0)?,
+                    coord: Self::get_coord(&split, 2)?,
+                    label: Self::get_label(&split, 4)?,
+                },
+                6 | 7 => PlaNode::CubicBezier {
+                    ctrl1: Self::get_coord(&split, 0)?,
+                    ctrl2: Self::get_coord(&split, 2)?,
+                    coord: Self::get_coord(&split, 4)?,
+                    label: Self::get_label(&split, 6)?,
+                },
+                len => return Err(Error::InvalidSplitLength(next.clone(), len)),
+            };
+
+            if nodes.is_empty()
+                && matches!(
+                    node,
+                    PlaNode::QuadraticBezier { .. } | PlaNode::CubicBezier { .. }
+                )
+            {
+                return Err(Error::FirstNodeIsCurve(format!("{node:?}")));
+            }
+
+            nodes.push(node);
         }
 
         let mut display_name = String::new();
@@ -162,7 +175,11 @@ where
             get_type("simpleLine").ok_or_else(|| Error::MissingType("simpleLine".into()))
         };
         let mut misc = BTreeMap::<String, toml::Value>::new();
-        for (k, v) in toml::from_str::<toml::Table>(attrs_str)? {
+
+        let toml_str = lines.try_fold(String::new(), |a, b| {
+            Result::<_, std::io::Error>::Ok(a + "\n" + &b?)
+        })?;
+        for (k, v) in toml::from_str::<toml::Table>(&toml_str)? {
             match &*k {
                 "display_name" => {
                     v.as_str()
@@ -215,7 +232,6 @@ where
 }
 
 impl<S: ?Sized, T: PlaNodeTypeGet> PlaComponent<S, T> {
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all, fields(self.full_id)))]
     pub fn save_to_string<'a, TS: Fn(&'a S) -> V, V: Into<toml::Value> + 'a>(
         &'a self,
         format_ty: TS,
@@ -224,12 +240,30 @@ impl<S: ?Sized, T: PlaNodeTypeGet> PlaComponent<S, T> {
         S: 'a,
     {
         let mut out = String::new();
-
+        self.save_to_writer(&mut out, format_ty)?;
+        Ok(out)
+    }
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all, fields(self.full_id)))]
+    pub fn save_to_writer<'a, W: Write, TS: Fn(&'a S) -> V, V: Into<toml::Value> + 'a>(
+        &'a self,
+        mut writer: W,
+        format_ty: TS,
+    ) -> Result<W>
+    where
+        S: 'a,
+    {
         for node in &self.nodes {
             match node {
-                PlaNode::Line { coord, .. } => write!(out, "{} {}", coord.x(), coord.y())?,
+                PlaNode::Line { coord, .. } => write!(writer, "{} {}", coord.x(), coord.y())?,
                 PlaNode::QuadraticBezier { ctrl, coord, .. } => {
-                    write!(out, "{} {} {} {}", ctrl.x(), ctrl.y(), coord.x(), coord.y())?;
+                    write!(
+                        writer,
+                        "{} {} {} {}",
+                        ctrl.x(),
+                        ctrl.y(),
+                        coord.x(),
+                        coord.y()
+                    )?;
                 }
                 PlaNode::CubicBezier {
                     ctrl1,
@@ -237,7 +271,7 @@ impl<S: ?Sized, T: PlaNodeTypeGet> PlaComponent<S, T> {
                     coord,
                     ..
                 } => write!(
-                    out,
+                    writer,
                     "{} {} {} {} {} {}",
                     ctrl1.x(),
                     ctrl1.y(),
@@ -248,12 +282,13 @@ impl<S: ?Sized, T: PlaNodeTypeGet> PlaComponent<S, T> {
                 )?,
             }
             if let Some(label) = node.label() {
-                writeln!(out, " #{label}")?;
+                writeln!(writer, " #{label}")?;
             } else {
-                out += "\n";
+                writer.write_str("\n")?;
             }
         }
-        out += "---\n";
+
+        writer.write_str("---\n")?;
 
         let attrs = self
             .misc
@@ -265,8 +300,9 @@ impl<S: ?Sized, T: PlaNodeTypeGet> PlaComponent<S, T> {
                 ("type".into(), format_ty(&self.ty).into()),
             ])
             .collect::<toml::Table>();
-        out += &toml::to_string_pretty(&attrs)?;
-        Ok(out)
+        writer.write_str(&toml::to_string_pretty(&attrs)?)?;
+
+        Ok(writer)
     }
 }
 
@@ -285,7 +321,7 @@ mod test {
     proptest! {
         #[test]
         fn test_loading_no_crash(s in ".*", namespace in ".*", id in ".*") {
-            let _ = PlaComponent::<str, (f32, f32)>::load_from_string(&s, FullId::new(namespace, id), |t| Some(t.into()));
+            let _ = PlaComponent::<str, (f32, f32)>::load(&s, FullId::new(namespace, id), |t| Some(t.into()));
         }
     }
 
@@ -311,13 +347,13 @@ mod test {
                 misc,
             };
             let string = pla3.save_to_string(Clone::clone).unwrap();
-            let (result, _) = PlaComponent::load_from_string(&string, full_id, |a| Some(Arc::new(a.to_owned()))).unwrap();
+            let (result, _) = PlaComponent::load(&string, full_id, |a| Some(Arc::new(a.to_owned()))).unwrap();
             prop_assert_eq!(pla3, result);
         }
     }
 
     fn load_expect_error(string: &str) -> Error {
-        PlaComponent::<String, (f32, f32)>::load_from_string(
+        PlaComponent::<String, (f32, f32)>::load(
             string,
             FullId::new(String::new(), String::new()),
             |a| Some(Arc::new(a.to_owned())),
@@ -327,7 +363,7 @@ mod test {
 
     #[test]
     fn test_invalid_label_missing_prefix() {
-        let string = "0 0 abc\n---\n";
+        let string = "0 0 abc";
         let result = load_expect_error(string);
         assert_matches!(
             result,
@@ -336,7 +372,7 @@ mod test {
     }
     #[test]
     fn test_invalid_label_invalid_number() {
-        let string = "0 0 #abc\n---\n";
+        let string = "0 0 #abc";
         let result = load_expect_error(string);
         assert_matches!(
             result,
@@ -344,38 +380,32 @@ mod test {
         );
     }
     #[test]
-    fn test_missing_separator() {
-        let string = "0 0";
-        let result = load_expect_error(string);
-        assert_matches!(result, Error::MissingSeparator(_));
-    }
-    #[test]
     fn test_invalid_split_length_1() {
-        let string = "0\n---\n";
+        let string = "0";
         let result = load_expect_error(string);
         assert_matches!(result, Error::InvalidSplitLength(_, 1));
     }
     #[test]
     fn test_invalid_split_length_8() {
-        let string = "0 0 0 0 0 0 0 0\n---\n";
+        let string = "0 0 0 0 0 0 0 0";
         let result = load_expect_error(string);
         assert_matches!(result, Error::InvalidSplitLength(_, 8));
     }
     #[test]
     fn test_invalid_coordinate() {
-        let string = "0 abc\n---\n";
+        let string = "0 abc";
         let result = load_expect_error(string);
         assert_matches!(result, Error::InvalidCoordinate(_, _));
     }
     #[test]
     fn test_first_node_is_curve_quad() {
-        let string = "0 0 0 0\n---\n";
+        let string = "0 0 0 0";
         let result = load_expect_error(string);
         assert_matches!(result, Error::FirstNodeIsCurve(_));
     }
     #[test]
     fn test_first_node_is_curve_cubic() {
-        let string = "0 0 0 0 0 0\n---\n";
+        let string = "0 0 0 0 0 0";
         let result = load_expect_error(string);
         assert_matches!(result, Error::FirstNodeIsCurve(_));
     }

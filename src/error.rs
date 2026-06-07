@@ -25,8 +25,6 @@ pub enum InvalidLayerError {
 pub enum Error {
     #[error("Invalid label `{0}`")]
     InvalidLabel(String, #[source] InvalidLabelError),
-    #[error("`---` not found in: {0:?}")]
-    MissingSeparator(String),
     #[error("`{0}` has invalid split length {1}")]
     InvalidSplitLength(String, usize),
     #[error("Invalid coordinate {0}")]
@@ -50,6 +48,8 @@ pub enum Error {
     TOMLSerialisation(#[from] toml::ser::Error),
     #[error("TOML deserialisation error")]
     TOMLDeserialisation(#[from] toml::de::Error),
+    #[error("IO error")]
+    IO(#[from] std::io::Error),
     #[error("Writing error")]
     Writing(#[from] std::fmt::Error),
     #[cfg(feature = "pla2")]

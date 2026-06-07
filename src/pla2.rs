@@ -1,11 +1,12 @@
 use std::{
     collections::{BTreeMap, HashSet},
+    io::{Read, Write},
     path::{Path, PathBuf},
     sync::Arc,
 };
 
 use ordered_float::NotNan;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{Error, FullId, PlaComponent, PlaNode, PlaNodeType, PlaNodeTypeBezier, Result};
 
@@ -142,13 +143,16 @@ impl<T: PlaNodeType> Pla2File<T> {
     }
 }
 impl<T: PlaNodeType + Serialize> Pla2File<T> {
-    pub fn as_json_string(&self) -> serde_json::error::Result<String> {
+    pub fn to_json_string(&self) -> serde_json::error::Result<String> {
         serde_json::to_string(self)
     }
-    pub fn as_json_bytes(&self) -> serde_json::error::Result<Vec<u8>> {
+    pub fn to_json_bytes(&self) -> serde_json::error::Result<Vec<u8>> {
         serde_json::to_vec(self)
     }
-    pub fn as_msgpack(&self) -> Result<Vec<u8>, rmp_serde::encode::Error> {
+    pub fn to_json_writer<W: Write>(&self, writer: W) -> serde_json::error::Result<()> {
+        serde_json::to_writer(writer, self)
+    }
+    pub fn to_msgpack_bytes(&self) -> Result<Vec<u8>, rmp_serde::encode::Error> {
         rmp_serde::to_vec_named(self)
     }
 }
@@ -159,12 +163,17 @@ impl<'de, T: PlaNodeType + Deserialize<'de>> Pla2File<T> {
     pub fn from_json_bytes(input: &'de [u8]) -> serde_json::error::Result<Self> {
         serde_json::from_slice(input)
     }
-    pub fn from_msgpack(input: &'de [u8]) -> Result<Self, rmp_serde::decode::Error> {
+    pub fn from_msgpack_bytes(input: &'de [u8]) -> Result<Self, rmp_serde::decode::Error> {
         rmp_serde::from_slice(input)
     }
 }
+impl<T: PlaNodeType + DeserializeOwned> Pla2File<T> {
+    pub fn from_msgpack_read<R: Read>(read: R) -> Result<Self, rmp_serde::decode::Error> {
+        rmp_serde::from_read(read)
+    }
+}
 
-#[cfg(test)]
+#[cfg(all(test, feature = "bezier-epaint"))]
 mod test {
     use itertools::Itertools;
     use ordered_float::NotNan;
@@ -175,7 +184,6 @@ mod test {
         test::{arb_toml, emath_vec2},
     };
 
-    #[cfg(feature = "bezier-epaint")]
     proptest! {
         #[test]
         fn test_pla2to3to2(

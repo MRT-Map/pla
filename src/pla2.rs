@@ -12,15 +12,15 @@ use crate::{Error, FullId, PlaComponent, PlaNode, PlaNodeType, PlaNodeTypeBezier
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Pla2Component<T: PlaNodeType> {
-    namespace: String,
-    id: String,
-    display_name: String,
-    description: String,
-    r#type: String,
-    layer: NotNan<f32>,
-    nodes: Vec<T>,
-    tags: HashSet<String>,
-    attrs: Option<BTreeMap<String, toml::Value>>,
+    pub namespace: String,
+    pub id: String,
+    pub display_name: String,
+    pub description: String,
+    pub r#type: String,
+    pub layer: NotNan<f32>,
+    pub nodes: Vec<T>,
+    pub tags: HashSet<String>,
+    pub attrs: Option<BTreeMap<String, toml::Value>>,
 }
 
 impl<T: PlaNodeType> Pla2Component<T> {
@@ -119,8 +119,8 @@ impl<S: ?Sized, T: PlaNodeTypeBezier> PlaComponent<S, T> {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Pla2File<T: PlaNodeType> {
-    namespace: String,
-    components: Vec<Pla2Component<T>>,
+    pub namespace: String,
+    pub components: Vec<Pla2Component<T>>,
 }
 
 impl<T: PlaNodeType> Pla2File<T> {

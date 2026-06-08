@@ -78,6 +78,18 @@ impl<S: ?Sized, T: PlaNodeType> PlaComponent<S, T> {
     pub fn path(&self, root: &Path) -> PathBuf {
         root.join(&*self.full_id.namespace).join(self.file_name())
     }
+
+    #[must_use]
+    pub fn map_coords<U: PlaNodeType>(self, f: impl Fn(T) -> U) -> PlaComponent<S, U> {
+        PlaComponent {
+            full_id: self.full_id,
+            ty: self.ty,
+            display_name: self.display_name,
+            layer: self.layer,
+            nodes: self.nodes.map(f),
+            misc: self.misc,
+        }
+    }
 }
 
 impl<S: ?Sized, T: PlaNodeTypeNew> PlaComponent<S, T>

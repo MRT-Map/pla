@@ -44,6 +44,8 @@ pub enum Error {
     InvalidSkinType(toml::Value),
     #[error("Unknown skin type for component {0}: {1}")]
     UnknownType(FullId, String),
+    #[error("Invalid namespace {0}")]
+    InvalidNamespace(String),
     #[error("TOML serialisation error")]
     TOMLSerialisation(#[from] toml::ser::Error),
     #[error("TOML deserialisation error")]

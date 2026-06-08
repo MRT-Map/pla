@@ -1,5 +1,6 @@
 mod component;
 mod error;
+mod namespace;
 mod node;
 mod node_type;
 mod node_vec;
@@ -8,6 +9,7 @@ mod pla2;
 
 pub use component::*;
 pub use error::*;
+pub use namespace::*;
 pub use node::*;
 pub use node_type::*;
 pub use node_vec::*;
@@ -18,7 +20,7 @@ pub use pla2::*;
 pub(crate) mod test {
     use proptest::prelude::*;
 
-    use crate::{PlaNode, PlaNodeVec};
+    use crate::{Namespace, PlaNode, PlaNodeVec};
 
     prop_compose! {
         pub fn vec2()(a in any::<f32>(), b in any::<f32>()) -> (f32, f32) {
@@ -68,5 +70,11 @@ pub(crate) mod test {
                     .prop_map(|a| toml::Value::Table(toml::Table::from_iter(a))),
             ]
         })
+    }
+
+    prop_compose! {
+        pub fn arb_namespace()(value in "[A-Za-z0-9_]+") -> Namespace {
+            Namespace::new(&value).unwrap()
+        }
     }
 }

@@ -8,11 +8,13 @@ use std::{
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-use crate::{Error, FullId, PlaComponent, PlaNode, PlaNodeType, PlaNodeTypeBezier, Result};
+use crate::{
+    Error, FullId, Namespace, PlaComponent, PlaNode, PlaNodeType, PlaNodeTypeBezier, Result,
+};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Pla2Component<T: PlaNodeType> {
-    pub namespace: String,
+    pub namespace: Namespace,
     pub id: String,
     pub display_name: String,
     pub description: String,
@@ -134,7 +136,7 @@ impl<S: ?Sized, T: PlaNodeTypeBezier> PlaComponent<S, T> {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Pla2File<T: PlaNodeType> {
-    pub namespace: String,
+    pub namespace: Namespace,
     pub components: Vec<Pla2Component<T>>,
 }
 
@@ -207,12 +209,12 @@ mod test {
     use proptest::prelude::*;
 
     use crate::{
-        Error, Pla2Component, Pla2File,
-        test::{arb_toml, emath_vec2},
+        Error, Namespace, Pla2Component, Pla2File,
+        test::{arb_namespace, arb_toml, emath_vec2},
     };
 
     prop_compose! {
-        fn arb_pla2(namespace_strategy: impl Strategy<Value = String>)(
+        fn arb_pla2(namespace_strategy: impl Strategy<Value = Namespace>)(
             namespace in namespace_strategy,
             id in ".*",
             display_name in ".*",
@@ -239,7 +241,7 @@ mod test {
     }
     prop_compose! {
         fn arb_pla2_file()(
-            namespace in ".*"
+            namespace in arb_namespace()
         )(
             namespace in Just(namespace.clone()),
             components in prop::collection::vec(arb_pla2(Just(namespace)), 0..10)
@@ -254,7 +256,7 @@ mod test {
     proptest! {
         #[test]
         fn test_pla2to3to2(
-            pla2 in arb_pla2(".*"),
+            pla2 in arb_pla2(arb_namespace()),
         ) {
             let pla2 = pla2?;
             let key_already_exists_error_expected = pla2.attrs.as_ref().is_some_and(|attrs| attrs.keys().any(|k| pla2.tags.contains(k)));

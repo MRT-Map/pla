@@ -10,15 +10,13 @@ use std::{
 use ordered_float::NotNan;
 
 use crate::{
-    error::{Error, InvalidLabelError, InvalidLayerError, Result},
-    node::PlaNode,
-    node_type::{PlaNodeType, PlaNodeTypeGet, PlaNodeTypeNew},
-    node_vec::PlaNodeVec,
+    Error, InvalidLabelError, InvalidLayerError, Namespace, PlaNode, PlaNodeType, PlaNodeTypeGet,
+    PlaNodeTypeNew, PlaNodeVec, Result,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FullId {
-    pub namespace: String,
+    pub namespace: Namespace,
     pub id: String,
 }
 
@@ -31,7 +29,7 @@ impl Display for FullId {
 
 impl FullId {
     #[must_use]
-    pub const fn new(namespace: String, id: String) -> Self {
+    pub const fn new(namespace: Namespace, id: String) -> Self {
         Self { namespace, id }
     }
 }
@@ -76,7 +74,7 @@ impl<S: ?Sized, T: PlaNodeType> PlaComponent<S, T> {
     }
     #[must_use]
     pub fn path(&self, root: &Path) -> PathBuf {
-        root.join(&*self.full_id.namespace).join(self.file_name())
+        root.join(&self.full_id.namespace).join(self.file_name())
     }
 
     #[must_use]
@@ -327,12 +325,13 @@ mod test {
 
     use crate::{
         Error, FullId, InvalidLabelError, InvalidLayerError, PlaComponent, PlaNode,
-        test::{arb_nodes, arb_toml},
+        namespace::Namespace,
+        test::{arb_namespace, arb_nodes, arb_toml},
     };
 
     proptest! {
         #[test]
-        fn test_loading_no_crash(s in ".*", namespace in ".*", id in ".*") {
+        fn test_loading_no_crash(s in ".*", namespace in arb_namespace(), id in ".*") {
             let _ = PlaComponent::<str, (f32, f32)>::load(&s, FullId::new(namespace, id), |t| Some(t.into()));
         }
     }
@@ -340,7 +339,7 @@ mod test {
     proptest! {
         #[test]
         fn test_save_load(
-            namespace in ".*",
+            namespace in arb_namespace(),
             id in ".*",
             ty in ".*",
             display_name in ".*",
@@ -367,7 +366,7 @@ mod test {
     fn load_expect_error(string: &str) -> Error {
         PlaComponent::<String, (f32, f32)>::load(
             string,
-            FullId::new(String::new(), String::new()),
+            FullId::new(Namespace::default(), String::new()),
             |a| Some(Arc::new(a.to_owned())),
         )
         .unwrap_err()

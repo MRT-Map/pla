@@ -24,6 +24,7 @@ pub enum PlaNodeIndex {
     feature = "serde",
     serde(bound = "T: serde::Serialize + serde::de::DeserializeOwned")
 )]
+#[repr(transparent)]
 pub struct PlaNodeVec<T: PlaNodeType>(Vec<PlaNode<T>>);
 
 impl<T: PlaNodeType> PlaNodeVec<T> {

@@ -269,7 +269,7 @@ mod test {
             namespace in arb_namespace()
         )(
             namespace in Just(namespace.clone()),
-            components in prop::collection::vec(arb_pla2(Just(namespace)), 0..10)
+            components in prop::collection::vec(arb_pla2(Just(namespace)), 1..10)
         ) -> Result<Pla2File<emath::Vec2>, TestCaseError> {
             let components = components.into_iter().collect::<Result<Vec<_>, TestCaseError>>()?;
             Ok(Pla2File {

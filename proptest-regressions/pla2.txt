@@ -9,3 +9,5 @@ cc dcd1c562d79a84f36af1e27563b60405c9a0897244552a0ba270133bdf48de0d # shrinks to
 cc e5b8bfb586fa9f47152c28525685a2130106dcb3004bd5d92df563d796278d64 # shrinks to namespace = "", id = "", display_name = "", description = "", r#type = "", layer = 0.0, nodes = [], tags = {""}, attrs = {}
 cc b4a112bc21e13fc66fc238b429641460f733648585bd67b160a27fd02c85a37f # shrinks to namespace = "", id = "", display_name = "", description = "", r#type = "", layer = 0.0, nodes = [], tags = {""}, attrs = Some({"": String("")})
 cc 0a042208644f1389bf62327f46f217f99a98782615b94daa6601bc07f774ab53 # shrinks to namespace = "", id = "", display_name = "", description = "", r#type = "", layer = 0.0, nodes = [], tags = {""}, attrs = Some({"¡": Boolean(true)})
+cc 4921399de3436608fa6278e8ae9236bd513684efcd434b1c946580cbef012d8d # shrinks to pla2_file = Ok(Pla2File { namespace: "A", components: [] })
+cc 4d2b784a02febb1f10bf4a9ee67077df16b372402634b40d7b7a622ae08171b8 # shrinks to pla2_file = Ok(Pla2File { namespace: "0", components: [] })

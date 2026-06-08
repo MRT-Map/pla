@@ -69,6 +69,7 @@ impl AsRef<str> for Namespace {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for Namespace {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -78,6 +79,7 @@ impl Serialize for Namespace {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Namespace {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

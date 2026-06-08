@@ -5,6 +5,7 @@ use std::{
     sync::Arc,
 };
 
+use itertools::Itertools;
 use ordered_float::NotNan;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
@@ -173,32 +174,56 @@ impl<T: PlaNodeType> Pla2File<T> {
 }
 impl<T: PlaNodeType + Serialize> Pla2File<T> {
     pub fn to_json_string(&self) -> serde_json::error::Result<String> {
-        serde_json::to_string(self)
+        serde_json::to_string(&self.components)
     }
     pub fn to_json_bytes(&self) -> serde_json::error::Result<Vec<u8>> {
-        serde_json::to_vec(self)
+        serde_json::to_vec(&self.components)
     }
     pub fn to_json_writer<W: Write>(&self, writer: W) -> serde_json::error::Result<()> {
-        serde_json::to_writer(writer, self)
+        serde_json::to_writer(writer, &self.components)
     }
     pub fn to_msgpack_bytes(&self) -> Result<Vec<u8>, rmp_serde::encode::Error> {
-        rmp_serde::to_vec_named(self)
+        rmp_serde::to_vec_named(&self.components)
     }
 }
 impl<'de, T: PlaNodeType + Deserialize<'de>> Pla2File<T> {
-    pub fn from_json_string(input: &'de str) -> serde_json::error::Result<Self> {
-        serde_json::from_str(input)
+    fn from_file(components: Vec<Pla2Component<T>>, namespace: Option<Namespace>) -> Result<Self> {
+        let namespaces = components
+            .iter()
+            .map(|a| &a.namespace)
+            .unique()
+            .collect::<HashSet<_>>();
+        let namespace = match (namespaces.into_iter().at_most_one(), namespace) {
+            (Ok(None), None) => Namespace::default(),
+            (Ok(None), Some(n)) => n,
+            (Ok(Some(n)), None) => n.clone(),
+            (Ok(Some(n1)), Some(n2)) => {
+                if *n1 == n2 {
+                    n2
+                } else {
+                    return Err(Error::IncorrectNamespace(n1.clone(), n2));
+                }
+            }
+            (Err(e), _) => return Err(Error::MultipleNamespaces(e.cloned().collect())),
+        };
+        Ok(Self {
+            namespace,
+            components,
+        })
     }
-    pub fn from_json_bytes(input: &'de [u8]) -> serde_json::error::Result<Self> {
-        serde_json::from_slice(input)
+    pub fn from_json_string(input: &'de str, namespace: Option<Namespace>) -> Result<Self> {
+        Self::from_file(serde_json::from_str(input)?, namespace)
     }
-    pub fn from_msgpack_bytes(input: &'de [u8]) -> Result<Self, rmp_serde::decode::Error> {
-        rmp_serde::from_slice(input)
+    pub fn from_json_bytes(input: &'de [u8], namespace: Option<Namespace>) -> Result<Self> {
+        Self::from_file(serde_json::from_slice(input)?, namespace)
+    }
+    pub fn from_msgpack_bytes(input: &'de [u8], namespace: Option<Namespace>) -> Result<Self> {
+        Self::from_file(rmp_serde::from_slice(input)?, namespace)
     }
 }
 impl<T: PlaNodeType + DeserializeOwned> Pla2File<T> {
-    pub fn from_msgpack_read<R: Read>(read: R) -> Result<Self, rmp_serde::decode::Error> {
-        rmp_serde::from_read(read)
+    pub fn from_msgpack_read<R: Read>(input: R, namespace: Option<Namespace>) -> Result<Self> {
+        Self::from_file(rmp_serde::from_read(input)?, namespace)
     }
 }
 
@@ -289,7 +314,7 @@ mod test {
         ) {
             let pla2_file = pla2_file?.map_coords(|a| (a.x, a.y));
             let json = pla2_file.to_json_bytes()?;
-            let result = Pla2File::from_json_bytes(&json)?;
+            let result = Pla2File::from_json_bytes(&json, None)?;
             prop_assert_eq!(pla2_file, result);
         }
 
@@ -299,7 +324,7 @@ mod test {
         ) {
             let pla2_file = pla2_file?.map_coords(|a| (a.x, a.y));
             let json = pla2_file.to_msgpack_bytes()?;
-            let result = Pla2File::from_msgpack_bytes(&json)?;
+            let result = Pla2File::from_msgpack_bytes(&json, None)?;
             prop_assert_eq!(pla2_file, result);
         }
     }

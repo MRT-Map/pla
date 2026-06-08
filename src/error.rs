@@ -1,9 +1,10 @@
-use std::num::ParseIntError;
+use std::{collections::HashSet, num::ParseIntError};
 
+use itertools::Itertools;
 use ordered_float::FloatIsNan;
 use thiserror::Error;
 
-use crate::FullId;
+use crate::{FullId, Namespace};
 
 #[derive(Error, Debug)]
 pub enum InvalidLabelError {
@@ -17,7 +18,7 @@ pub enum InvalidLabelError {
 pub enum InvalidLayerError {
     #[error("Neither integer nor float")]
     NeitherIntegerNorFloat,
-    #[error("Is NaN")]
+    #[error("Is NaN: {0}")]
     IsNaN(#[cfg_attr(feature = "std", from)] FloatIsNan),
 }
 
@@ -27,7 +28,7 @@ pub enum Error {
     InvalidLabel(String, #[source] InvalidLabelError),
     #[error("`{0}` has invalid split length {1}")]
     InvalidSplitLength(String, usize),
-    #[error("Invalid coordinate {0}")]
+    #[error("Invalid coordinate {0}: {1}")]
     InvalidCoordinate(
         String,
         #[source] Box<dyn std::error::Error + Send + Sync + 'static>,
@@ -46,17 +47,30 @@ pub enum Error {
     UnknownType(FullId, String),
     #[error("Invalid namespace {0}")]
     InvalidNamespace(String),
-    #[error("TOML serialisation error")]
+    #[error("TOML serialisation error: {0}")]
     TOMLSerialisation(#[from] toml::ser::Error),
-    #[error("TOML deserialisation error")]
+    #[error("TOML deserialisation error: {0}")]
     TOMLDeserialisation(#[from] toml::de::Error),
-    #[error("IO error")]
+    #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
-    #[error("Writing error")]
+    #[error("Writing error: {0}")]
     Writing(#[from] std::fmt::Error),
+
     #[cfg(feature = "pla2")]
     #[error("Cannot write tag {0} into `misc` field as key already exists")]
     KeyAlreadyExistsForTag(String),
+    #[cfg(feature = "pla2")]
+    #[error("Components of multiple namespaces in single PLA2 file (Got {})", .0.iter().map(ToString::to_string).join(", "))]
+    MultipleNamespaces(HashSet<Namespace>),
+    #[cfg(feature = "pla2")]
+    #[error("Namespace `{0}` found in PLA2 file of namespace `{1}`")]
+    IncorrectNamespace(Namespace, Namespace),
+    #[cfg(feature = "pla2")]
+    #[error("JSON deserialisation error: {0}")]
+    JSON(#[from] serde_json::Error),
+    #[cfg(feature = "pla2")]
+    #[error("MessagePack deserialisation error: {0}")]
+    MessagePackDecode(#[from] rmp_serde::decode::Error),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

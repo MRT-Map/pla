@@ -44,6 +44,7 @@ std = [
     "itertools/use_std",
     "ordered-float/std",
     "toml/std",
+    "smol_str/std",
     "serde?/std",
     "tracing?/std",
     "glam?/std",

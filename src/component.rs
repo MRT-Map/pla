@@ -80,7 +80,7 @@ impl<S: ?Sized, T: PlaNodeType> PlaComponent<S, T> {
     }
 
     #[must_use]
-    pub fn map_coords<U: PlaNodeType>(self, f: impl Fn(T) -> U) -> PlaComponent<S, U> {
+    pub fn map_coords<U: PlaNodeType, F: Fn(T) -> U>(self, f: F) -> PlaComponent<S, U> {
         PlaComponent {
             full_id: self.full_id,
             ty: self.ty,

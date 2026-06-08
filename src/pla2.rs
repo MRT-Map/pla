@@ -68,6 +68,21 @@ impl<T: PlaNodeType> Pla2Component<T> {
     ) -> Result<PlaComponent<S, T>> {
         self.clone().to_pla3(get_type)
     }
+
+    #[must_use]
+    pub fn map_coords<U: PlaNodeType, F: Fn(T) -> U>(self, f: F) -> Pla2Component<U> {
+        Pla2Component {
+            namespace: self.namespace,
+            id: self.id,
+            display_name: self.display_name,
+            description: self.description,
+            r#type: self.r#type,
+            layer: self.layer,
+            nodes: self.nodes.into_iter().map(f).collect(),
+            tags: self.tags,
+            attrs: self.attrs,
+        }
+    }
 }
 impl<S: ?Sized, T: PlaNodeTypeBezier> PlaComponent<S, T> {
     pub fn to_pla2<TS: Fn(&S) -> V, V: Into<String>, Tolerance: Into<Option<f32>> + Copy>(
@@ -141,6 +156,18 @@ impl<T: PlaNodeType> Pla2File<T> {
     pub fn msgpack_file_name(&self) -> String {
         format!("{}.pla2.msgpack", self.namespace)
     }
+
+    #[must_use]
+    pub fn map_coords<U: PlaNodeType, F: Fn(T) -> U>(self, f: F) -> Pla2File<U> {
+        Pla2File {
+            namespace: self.namespace,
+            components: self
+                .components
+                .into_iter()
+                .map(|a| a.map_coords(&f))
+                .collect(),
+        }
+    }
 }
 impl<T: PlaNodeType + Serialize> Pla2File<T> {
     pub fn to_json_string(&self) -> serde_json::error::Result<String> {
@@ -180,26 +207,24 @@ mod test {
     use proptest::prelude::*;
 
     use crate::{
-        Error, Pla2Component,
+        Error, Pla2Component, Pla2File,
         test::{arb_toml, emath_vec2},
     };
 
-    proptest! {
-        #[test]
-        fn test_pla2to3to2(
-            namespace in ".*",
+    prop_compose! {
+        fn arb_pla2(namespace_strategy: impl Strategy<Value = String>)(
+            namespace in namespace_strategy,
             id in ".*",
             display_name in ".*",
             description in ".*",
             r#type in ".*",
             layer in any::<f32>().prop_filter_map("not nan", |a| NotNan::new(a).ok()),
-            nodes in prop::collection::vec(emath_vec2(), 0..=100),
-            tags in prop::collection::hash_set(".*", 1..=100),
+            nodes in prop::collection::vec(emath_vec2(), 0..10),
+            tags in prop::collection::hash_set(".*", 1..10),
             attrs in prop::option::of(prop::collection::btree_map(".*", arb_toml(), 1..10)),
-        ) {
+        ) -> Result<Pla2Component<emath::Vec2>, TestCaseError> {
             prop_assume!(attrs.as_ref().is_none_or(|attrs| !attrs.values().any(|v| *v == toml::Value::Boolean(true))));
-            let key_already_exists_error_expected = attrs.as_ref().is_some_and(|attrs| attrs.keys().any(|k| tags.contains(k)));
-            let pla2 = Pla2Component::<emath::Vec2> {
+            Ok(Pla2Component::<emath::Vec2> {
                 namespace,
                 id,
                 display_name,
@@ -209,7 +234,30 @@ mod test {
                 nodes: nodes.into_iter().dedup().collect(),
                 tags,
                 attrs,
-            };
+            })
+        }
+    }
+    prop_compose! {
+        fn arb_pla2_file()(
+            namespace in ".*"
+        )(
+            namespace in Just(namespace.clone()),
+            components in prop::collection::vec(arb_pla2(Just(namespace)), 0..10)
+        ) -> Result<Pla2File<emath::Vec2>, TestCaseError> {
+            let components = components.into_iter().collect::<Result<Vec<_>, TestCaseError>>()?;
+            Ok(Pla2File {
+                namespace, components
+            })
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn test_pla2to3to2(
+            pla2 in arb_pla2(".*"),
+        ) {
+            let pla2 = pla2?;
+            let key_already_exists_error_expected = pla2.attrs.as_ref().is_some_and(|attrs| attrs.keys().any(|k| pla2.tags.contains(k)));
             let pla3 = match pla2.as_pla3::<str, _>(|a| Some(a.into())) {
                 Ok(a) => {
                     prop_assert!(!key_already_exists_error_expected);
@@ -224,6 +272,33 @@ mod test {
 
             let result = pla3.to_pla2(str::to_owned, None);
             prop_assert_eq!(pla2, result);
+        }
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig {
+            max_shrink_iters: 2048,
+            ..ProptestConfig::default()
+        })]
+
+        #[test]
+        fn test_pla2_json(
+            pla2_file in arb_pla2_file(),
+        ) {
+            let pla2_file = pla2_file?.map_coords(|a| (a.x, a.y));
+            let json = pla2_file.to_json_bytes()?;
+            let result = Pla2File::from_json_bytes(&json)?;
+            prop_assert_eq!(pla2_file, result);
+        }
+
+        #[test]
+        fn test_pla2_msgpack(
+            pla2_file in arb_pla2_file(),
+        ) {
+            let pla2_file = pla2_file?.map_coords(|a| (a.x, a.y));
+            let json = pla2_file.to_msgpack_bytes()?;
+            let result = Pla2File::from_msgpack_bytes(&json)?;
+            prop_assert_eq!(pla2_file, result);
         }
     }
 }

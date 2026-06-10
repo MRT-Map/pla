@@ -21,4 +21,4 @@ jobs:
       - uses: ./.github/actions/mise
         with:
           envs: "test"
-      - run: cargo llvm-cov --all-features --all-targets --text -- --nocapture
+      - run: cargo llvm-cov --all-features --all-targets --text --color=always -- --nocapture

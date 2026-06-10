@@ -11,7 +11,7 @@ documentation = "https://github.com/MRT-Map/stencil3/wiki"
 readme = "../README.md"
 keywords = ["pla3", "pla3", "mrt", "mrt-map", "mrt-mapping-services"]
 categories = ["games", "science::geo", "parser-implementations"]
-rust-version = "1.85"
+rust-version = "1.88"
 
 [dependencies]
 thiserror = { version = "2.0", default-features = false }

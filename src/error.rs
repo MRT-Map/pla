@@ -1,10 +1,15 @@
-use std::{collections::HashSet, num::ParseIntError};
+#[cfg(feature = "pla2")]
+use std::collections::HashSet;
+use std::num::ParseIntError;
 
+#[cfg(feature = "pla2")]
 use itertools::Itertools;
 use ordered_float::FloatIsNan;
 use thiserror::Error;
 
-use crate::{FullId, Namespace};
+use crate::FullId;
+#[cfg(feature = "pla2")]
+use crate::Namespace;
 
 #[derive(Error, Debug)]
 pub enum InvalidLabelError {

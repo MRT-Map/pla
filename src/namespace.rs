@@ -4,6 +4,7 @@ use std::{
     path::Path,
 };
 
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 

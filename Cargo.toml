@@ -15,7 +15,7 @@ rust-version = "1.88"
 
 [dependencies]
 thiserror = { version = "2.0", default-features = false }
-itertools = { version = ">=0.7.0, <0.15.0", default-features = false }
+itertools = { version = ">=0.7.0, <0.16.0", default-features = false }
 ordered-float = { version = ">=4.6.0, <6.0.0", default-features = false }
 toml = { version = ">=0.9.0, <2.0.0", default-features = false, features = ["serde", "display", "parse"] }
 smol_str = { version = ">=0.1.11, <0.4.0", default-features = false }

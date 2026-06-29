@@ -3,5 +3,11 @@
   "extends": [
     "github>mrt-map/renovate-config:no-dev",
     "github>mrt-map/renovate-config:library"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["/^egui/", "eframe", "emath", "epaint"],
+      "groupName": "egui-group"
+    }
   ]
 }

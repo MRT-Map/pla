@@ -7,13 +7,18 @@ use std::{
 
 use itertools::Itertools;
 use ordered_float::NotNan;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de::DeserializeOwned};
 
 use crate::{
-    Error, FullId, Namespace, PlaComponent, PlaNode, PlaNodeType, PlaNodeTypeBezier, Result,
+    Error, FullId, Namespace, PlaComponent, PlaNode, PlaNodeType, PlaNodeTypeBezier,
+    PlaNodeTypeGet, PlaNodeTypeNew, Result,
 };
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(bound(
+    serialize = "T: PlaNodeTypeGet, T::C: Serialize",
+    deserialize = "T: PlaNodeTypeNew, T::C: Deserialize<'de>"
+))]
 pub struct Pla2Component<T: PlaNodeType> {
     pub namespace: Namespace,
     pub id: String,
@@ -21,9 +26,37 @@ pub struct Pla2Component<T: PlaNodeType> {
     pub description: String,
     pub r#type: String,
     pub layer: NotNan<f32>,
+    #[serde(
+        serialize_with = "Pla2Component::serialize_nodes",
+        deserialize_with = "Pla2Component::deserialize_nodes"
+    )]
     pub nodes: Vec<T>,
     pub tags: HashSet<String>,
     pub attrs: Option<BTreeMap<String, toml::Value>>,
+}
+
+impl<T: PlaNodeTypeGet> Pla2Component<T>
+where
+    T::C: Serialize,
+{
+    pub fn serialize_nodes<S: Serializer>(nodes: &[T], ser: S) -> Result<S::Ok, S::Error> {
+        nodes
+            .iter()
+            .map(|a| (a.x(), a.y()))
+            .collect::<Vec<_>>()
+            .serialize(ser)
+    }
+}
+impl<'de, T: PlaNodeTypeNew> Pla2Component<T>
+where
+    T::C: Deserialize<'de>,
+{
+    pub fn deserialize_nodes<D: Deserializer<'de>>(de: D) -> Result<Vec<T>, D::Error> {
+        Ok(Vec::<(T::C, T::C)>::deserialize(de)?
+            .into_iter()
+            .map(|(x, y)| T::new(x, y))
+            .collect())
+    }
 }
 
 impl<T: PlaNodeType> Pla2Component<T> {
@@ -136,6 +169,10 @@ impl<S: ?Sized, T: PlaNodeTypeBezier> PlaComponent<S, T> {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(bound(
+    serialize = "T: PlaNodeTypeGet, T::C: Serialize",
+    deserialize = "T: PlaNodeTypeNew, T::C: Deserialize<'de>"
+))]
 pub struct Pla2File<T: PlaNodeType> {
     pub namespace: Namespace,
     pub components: Vec<Pla2Component<T>>,
@@ -172,7 +209,10 @@ impl<T: PlaNodeType> Pla2File<T> {
         }
     }
 }
-impl<T: PlaNodeType + Serialize> Pla2File<T> {
+impl<T: PlaNodeTypeGet> Pla2File<T>
+where
+    T::C: Serialize,
+{
     pub fn to_json_string(&self) -> serde_json::error::Result<String> {
         serde_json::to_string(&self.components)
     }
@@ -186,7 +226,10 @@ impl<T: PlaNodeType + Serialize> Pla2File<T> {
         rmp_serde::to_vec_named(&self.components)
     }
 }
-impl<'de, T: PlaNodeType + Deserialize<'de>> Pla2File<T> {
+impl<'de, T: PlaNodeTypeNew> Pla2File<T>
+where
+    T::C: Deserialize<'de>,
+{
     fn from_file(components: Vec<Pla2Component<T>>, namespace: Option<Namespace>) -> Result<Self> {
         let namespaces = components
             .iter()
@@ -221,7 +264,10 @@ impl<'de, T: PlaNodeType + Deserialize<'de>> Pla2File<T> {
         Self::from_file(rmp_serde::from_slice(input)?, namespace)
     }
 }
-impl<T: PlaNodeType + DeserializeOwned> Pla2File<T> {
+impl<T: PlaNodeTypeNew> Pla2File<T>
+where
+    T::C: DeserializeOwned,
+{
     pub fn from_msgpack_read<R: Read>(input: R, namespace: Option<Namespace>) -> Result<Self> {
         Self::from_file(rmp_serde::from_read(input)?, namespace)
     }

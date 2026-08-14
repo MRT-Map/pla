@@ -275,6 +275,7 @@ where
 
 #[cfg(all(test, feature = "bezier-epaint"))]
 mod test {
+    use emath036 as emath;
     use itertools::Itertools;
     use ordered_float::NotNan;
     use proptest::prelude::*;

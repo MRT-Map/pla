@@ -1,3 +1,40 @@
+#[cfg(feature = "emath028")]
+mod emath028;
+#[cfg(feature = "emath029")]
+mod emath029;
+#[cfg(feature = "emath030")]
+mod emath030;
+#[cfg(feature = "emath031")]
+mod emath031;
+#[cfg(feature = "emath032")]
+mod emath032;
+#[cfg(feature = "emath033")]
+mod emath033;
+#[cfg(feature = "emath034")]
+mod emath034;
+#[cfg(feature = "emath035")]
+mod emath035;
+#[cfg(feature = "emath036")]
+mod emath036;
+#[cfg(feature = "bezier-epaint028")]
+mod epaint028;
+#[cfg(feature = "bezier-epaint029")]
+mod epaint029;
+#[cfg(feature = "bezier-epaint030")]
+mod epaint030;
+#[cfg(feature = "bezier-epaint031")]
+mod epaint031;
+#[cfg(feature = "bezier-epaint032")]
+mod epaint032;
+#[cfg(feature = "bezier-epaint033")]
+mod epaint033;
+#[cfg(feature = "bezier-epaint034")]
+mod epaint034;
+#[cfg(feature = "bezier-epaint035")]
+mod epaint035;
+#[cfg(feature = "bezier-epaint036")]
+mod epaint036;
+
 use std::{
     error::Error,
     fmt::{Debug, Display},
@@ -104,182 +141,6 @@ impl<CC: PlaNodeType + Display> PlaNodeTypeGet for Type<CC> {
     }
     fn y(self) -> Self::C {
         self.y
-    }
-}
-
-#[cfg(feature = "emath")]
-#[duplicate::duplicate_item(
-    Type; [emath::Pos2]; [emath::Vec2]
-)]
-impl PlaNodeTypeNew for Type {
-    type C = f32;
-    fn new(x: Self::C, y: Self::C) -> Self {
-        Self::from([x, y])
-    }
-}
-
-#[cfg(feature = "emath")]
-#[duplicate::duplicate_item(
-    Type; [emath::Pos2]; [emath::Vec2]
-)]
-impl PlaNodeTypeGet for Type {
-    type C = f32;
-    fn x(self) -> Self::C {
-        self.x
-    }
-    fn y(self) -> Self::C {
-        self.y
-    }
-}
-
-#[cfg(feature = "emath")]
-impl PlaNodeTypeRect for emath::Vec2 {
-    type Rect = emath::Rect;
-    fn combine_rect(a: Self::Rect, b: Self::Rect) -> Self::Rect {
-        a.union(b)
-    }
-    fn rect_from_point(self) -> Self::Rect {
-        Self::Rect::from_pos(self.to_pos2())
-    }
-    fn rect_from_line(a: Self, b: Self) -> Self::Rect {
-        Self::Rect::from_two_pos(a.to_pos2(), b.to_pos2())
-    }
-    fn rect_centre(rect: Self::Rect) -> Self {
-        rect.center().to_vec2()
-    }
-}
-#[cfg(feature = "emath")]
-impl PlaNodeTypeRect for emath::Pos2 {
-    type Rect = emath::Rect;
-    fn combine_rect(a: Self::Rect, b: Self::Rect) -> Self::Rect {
-        a.union(b)
-    }
-    fn rect_from_point(self) -> Self::Rect {
-        Self::Rect::from_pos(self)
-    }
-    fn rect_from_line(a: Self, b: Self) -> Self::Rect {
-        Self::Rect::from_two_pos(a, b)
-    }
-    fn rect_centre(rect: Self::Rect) -> Self {
-        rect.center()
-    }
-}
-
-#[cfg(feature = "bezier-epaint")]
-impl PlaNodeTypeBezier for emath::Vec2 {
-    fn flatten_quadratic(
-        a: Self,
-        b: Self,
-        c: Self,
-        tolerance: impl Into<Option<f32>>,
-    ) -> Vec<Self> {
-        epaint::QuadraticBezierShape::from_points_stroke(
-            [a.to_pos2(), b.to_pos2(), c.to_pos2()],
-            false,
-            epaint::Color32::default(),
-            epaint::Stroke::default(),
-        )
-        .flatten(tolerance.into())
-        .into_iter()
-        .map(emath::Pos2::to_vec2)
-        .collect()
-    }
-
-    fn flatten_cubic(
-        a: Self,
-        b: Self,
-        c: Self,
-        d: Self,
-        tolerance: impl Into<Option<f32>>,
-    ) -> Vec<Self> {
-        epaint::CubicBezierShape::from_points_stroke(
-            [a.to_pos2(), b.to_pos2(), c.to_pos2(), d.to_pos2()],
-            false,
-            epaint::Color32::default(),
-            epaint::Stroke::default(),
-        )
-        .flatten(tolerance.into())
-        .into_iter()
-        .map(emath::Pos2::to_vec2)
-        .collect()
-    }
-}
-
-#[cfg(feature = "bezier-epaint")]
-impl PlaNodeTypeBezier for emath::Pos2 {
-    fn flatten_quadratic(
-        a: Self,
-        b: Self,
-        c: Self,
-        tolerance: impl Into<Option<f32>>,
-    ) -> Vec<Self> {
-        epaint::QuadraticBezierShape::from_points_stroke(
-            [a, b, c],
-            false,
-            epaint::Color32::default(),
-            epaint::Stroke::default(),
-        )
-        .flatten(tolerance.into())
-    }
-
-    fn flatten_cubic(
-        a: Self,
-        b: Self,
-        c: Self,
-        d: Self,
-        tolerance: impl Into<Option<f32>>,
-    ) -> Vec<Self> {
-        epaint::CubicBezierShape::from_points_stroke(
-            [a, b, c, d],
-            false,
-            epaint::Color32::default(),
-            epaint::Stroke::default(),
-        )
-        .flatten(tolerance.into())
-    }
-}
-
-#[cfg(feature = "bezier-epaint")]
-impl PlaNodeTypeBezierRect for emath::Vec2 {
-    fn rect_from_quadratic(a: Self, b: Self, c: Self) -> Self::Rect {
-        epaint::QuadraticBezierShape::from_points_stroke(
-            [a.to_pos2(), b.to_pos2(), c.to_pos2()],
-            false,
-            epaint::Color32::default(),
-            epaint::Stroke::default(),
-        )
-        .logical_bounding_rect()
-    }
-    fn rect_from_cubic(a: Self, b: Self, c: Self, d: Self) -> Self::Rect {
-        epaint::CubicBezierShape::from_points_stroke(
-            [a.to_pos2(), b.to_pos2(), c.to_pos2(), d.to_pos2()],
-            false,
-            epaint::Color32::default(),
-            epaint::Stroke::default(),
-        )
-        .logical_bounding_rect()
-    }
-}
-
-#[cfg(feature = "bezier-epaint")]
-impl PlaNodeTypeBezierRect for emath::Pos2 {
-    fn rect_from_quadratic(a: Self, b: Self, c: Self) -> Self::Rect {
-        epaint::QuadraticBezierShape::from_points_stroke(
-            [a, b, c],
-            false,
-            epaint::Color32::default(),
-            epaint::Stroke::default(),
-        )
-        .logical_bounding_rect()
-    }
-    fn rect_from_cubic(a: Self, b: Self, c: Self, d: Self) -> Self::Rect {
-        epaint::CubicBezierShape::from_points_stroke(
-            [a, b, c, d],
-            false,
-            epaint::Color32::default(),
-            epaint::Stroke::default(),
-        )
-        .logical_bounding_rect()
     }
 }
 

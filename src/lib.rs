@@ -28,10 +28,10 @@ pub(crate) mod test {
         }
     }
 
-    #[cfg(feature = "emath")]
+    #[cfg(feature = "emath036")]
     prop_compose! {
-        pub fn emath_vec2()(a in any::<f32>(), b in any::<f32>()) -> emath::Vec2 {
-            emath::vec2(a, b)
+        pub fn emath_vec2()(a in any::<f32>(), b in any::<f32>()) -> emath036::Vec2 {
+            emath036::vec2(a, b)
         }
     }
 
@@ -57,10 +57,17 @@ pub(crate) mod test {
     }
 
     pub fn arb_toml() -> impl Strategy<Value = toml::Value> {
+        #[cfg(feature = "serde-float_roundtrip")]
         let leaf = prop_oneof![
             ".*".prop_map(toml::Value::String),
             any::<i64>().prop_map(toml::Value::Integer),
-            // any::<f64>().prop_map(toml::Value::Float), issues with -9.051895622533191e-213 becoming -9.051895622533192e-213
+            any::<bool>().prop_map(toml::Value::Boolean),
+            any::<f64>().prop_map(toml::Value::Float),
+        ];
+        #[cfg(not(feature = "serde-float_roundtrip"))]
+        let leaf = prop_oneof![
+            ".*".prop_map(toml::Value::String),
+            any::<i64>().prop_map(toml::Value::Integer),
             any::<bool>().prop_map(toml::Value::Boolean),
         ];
         leaf.prop_recursive(8, 256, 10, |inner| {

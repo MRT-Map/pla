@@ -28,14 +28,30 @@ serde_json = { version = "1.0", optional = true }
 duplicate = { version = ">=0.4.0, <3.0.0", optional = true }
 mint = { version = ">=0.3.0, <0.6.0", optional = true }
 geo = { version = ">=0.22.0, <0.34.0", default-features = false, optional = true }
-emath = { version = ">=0.28.0, <0.37.0", default-features = false, optional = true }
 glam = { version = ">=0.33.0, <0.34.0", default-features = false, optional = true, features = ["all-types"] }
 
-epaint = { version = ">=0.28.0, <0.37.0", default-features = false, optional = true }
+emath028 = { version = "0.28", default-features = false, optional = true, package = "emath" }
+emath029 = { version = "0.29", default-features = false, optional = true, package = "emath" }
+emath030 = { version = "0.30", default-features = false, optional = true, package = "emath" }
+emath031 = { version = "0.31", default-features = false, optional = true, package = "emath" }
+emath032 = { version = "0.32", default-features = false, optional = true, package = "emath" }
+emath033 = { version = "0.33", default-features = false, optional = true, package = "emath" }
+emath034 = { version = "0.34", default-features = false, optional = true, package = "emath" }
+emath035 = { version = "0.35", default-features = false, optional = true, package = "emath" }
+emath036 = { version = "0.36", default-features = false, optional = true, package = "emath" }
+
+epaint028 = { version = "0.28", default-features = false, optional = true, package = "epaint" }
+epaint029 = { version = "0.29", default-features = false, optional = true, package = "epaint" }
+epaint030 = { version = "0.30", default-features = false, optional = true, package = "epaint" }
+epaint031 = { version = "0.31", default-features = false, optional = true, package = "epaint" }
+epaint032 = { version = "0.32", default-features = false, optional = true, package = "epaint" }
+epaint033 = { version = "0.33", default-features = false, optional = true, package = "epaint" }
+epaint034 = { version = "0.34", default-features = false, optional = true, package = "epaint" }
+epaint035 = { version = "0.35", default-features = false, optional = true, package = "epaint" }
+epaint036 = { version = "0.36", default-features = false, optional = true, package = "epaint" }
 
 [dev-dependencies]
 proptest = "=1.11.0"
-
 
 [features]
 default = ["std"]
@@ -55,13 +71,33 @@ libm = [
 ]
 serde = ["dep:serde", "ordered-float/serde"]
 pla2 = ["serde", "rmp-serde", "serde_json"]
+serde-float_roundtrip = ["serde_json?/float_roundtrip"]
 
 mint = ["dep:mint", "duplicate"]
 geo = ["dep:geo", "duplicate"]
-emath = ["dep:emath", "duplicate"]
 glam = ["dep:glam", "duplicate"]
 
-bezier-epaint = ["dep:epaint", "emath"]
+emath028 = ["dep:emath028", "duplicate"]
+emath029 = ["dep:emath029", "duplicate"]
+emath030 = ["dep:emath030", "duplicate"]
+emath031 = ["dep:emath031", "duplicate"]
+emath032 = ["dep:emath032", "duplicate"]
+emath033 = ["dep:emath033", "duplicate"]
+emath034 = ["dep:emath034", "duplicate"]
+emath035 = ["dep:emath035", "duplicate"]
+emath036 = ["dep:emath036", "duplicate"]
+emath = ["emath036"]
+
+bezier-epaint028 = ["dep:epaint028", "emath028"]
+bezier-epaint029 = ["dep:epaint029", "emath029"]
+bezier-epaint030 = ["dep:epaint030", "emath030"]
+bezier-epaint031 = ["dep:epaint031", "emath031"]
+bezier-epaint032 = ["dep:epaint032", "emath032"]
+bezier-epaint033 = ["dep:epaint033", "emath033"]
+bezier-epaint034 = ["dep:epaint034", "emath034"]
+bezier-epaint035 = ["dep:epaint035", "emath035"]
+bezier-epaint036 = ["dep:epaint036", "emath036"]
+bezier-epaint = ["bezier-epaint036"]
 
 [lints.rust]
 future-incompatible = "deny"

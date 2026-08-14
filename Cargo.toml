@@ -30,24 +30,24 @@ mint = { version = ">=0.3.0, <0.6.0", optional = true }
 geo = { version = ">=0.22.0, <0.34.0", default-features = false, optional = true }
 glam = { version = ">=0.33.0, <0.34.0", default-features = false, optional = true, features = ["all-types"] }
 
-emath028 = { version = "0.28", default-features = false, optional = true, package = "emath" }
-emath029 = { version = "0.29", default-features = false, optional = true, package = "emath" }
-emath030 = { version = "0.30", default-features = false, optional = true, package = "emath" }
-emath031 = { version = "0.31", default-features = false, optional = true, package = "emath" }
-emath032 = { version = "0.32", default-features = false, optional = true, package = "emath" }
-emath033 = { version = "0.33", default-features = false, optional = true, package = "emath" }
-emath034 = { version = "0.34", default-features = false, optional = true, package = "emath" }
-emath035 = { version = "0.35", default-features = false, optional = true, package = "emath" }
+emath028 = { version = "0.28, ||, ^0", default-features = false, optional = true, package = "emath" }
+emath029 = { version = "0.29, ||, ^0", default-features = false, optional = true, package = "emath" }
+emath030 = { version = "0.30, ||, ^0", default-features = false, optional = true, package = "emath" }
+emath031 = { version = "0.31, ||, ^0", default-features = false, optional = true, package = "emath" }
+emath032 = { version = "0.32, ||, ^0", default-features = false, optional = true, package = "emath" }
+emath033 = { version = "0.33, ||, ^0", default-features = false, optional = true, package = "emath" }
+emath034 = { version = "0.34, ||, ^0", default-features = false, optional = true, package = "emath" }
+emath035 = { version = "0.35, ||, ^0", default-features = false, optional = true, package = "emath" }
 emath036 = { version = "0.36", default-features = false, optional = true, package = "emath" }
 
-epaint028 = { version = "0.28", default-features = false, optional = true, package = "epaint" }
-epaint029 = { version = "0.29", default-features = false, optional = true, package = "epaint" }
-epaint030 = { version = "0.30", default-features = false, optional = true, package = "epaint" }
-epaint031 = { version = "0.31", default-features = false, optional = true, package = "epaint" }
-epaint032 = { version = "0.32", default-features = false, optional = true, package = "epaint" }
-epaint033 = { version = "0.33", default-features = false, optional = true, package = "epaint" }
-epaint034 = { version = "0.34", default-features = false, optional = true, package = "epaint" }
-epaint035 = { version = "0.35", default-features = false, optional = true, package = "epaint" }
+epaint028 = { version = "0.28, ||, ^0", default-features = false, optional = true, package = "epaint" }
+epaint029 = { version = "0.29, ||, ^0", default-features = false, optional = true, package = "epaint" }
+epaint030 = { version = "0.30, ||, ^0", default-features = false, optional = true, package = "epaint" }
+epaint031 = { version = "0.31, ||, ^0", default-features = false, optional = true, package = "epaint" }
+epaint032 = { version = "0.32, ||, ^0", default-features = false, optional = true, package = "epaint" }
+epaint033 = { version = "0.33, ||, ^0", default-features = false, optional = true, package = "epaint" }
+epaint034 = { version = "0.34, ||, ^0", default-features = false, optional = true, package = "epaint" }
+epaint035 = { version = "0.35, ||, ^0", default-features = false, optional = true, package = "epaint" }
 epaint036 = { version = "0.36", default-features = false, optional = true, package = "epaint" }
 
 [dev-dependencies]

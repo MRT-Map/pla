@@ -100,7 +100,7 @@ bezier-epaint036 = ["dep:epaint036", "emath036"]
 bezier-epaint = ["bezier-epaint036"]
 
 [lints.rust]
-future-incompatible = "deny"
+future_incompatible = "deny"
 
 [lints.clippy]
 all = "warn"

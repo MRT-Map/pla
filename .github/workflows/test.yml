@@ -1,17 +1,22 @@
 name: Test
 on:
   push:
-    branches: ["**"]
+    branches: ["**", "!renovate/**", "!lint/**"]
   pull_request:
   workflow_call:
+  workflow_dispatch:
 
-env:
-  CARGO_TERM_COLOR: always
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     permissions:
       contents: read
+      pull-requests: read
+      code-quality: write
     runs-on: ubuntu-latest
 
     steps:
@@ -21,4 +26,10 @@ jobs:
       - uses: $/.github/actions/mise
         with:
           envs: "test"
-      - run: cargo llvm-cov --all-features --all-targets --text --color=always -- --nocapture
+      - run: cargo llvm-cov --all-features --all-targets --cobertura -- --nocapture > cobertura.xml
+      - uses: actions/upload-code-coverage@2b21a77928be8d5168c2b9581a67f2adbebacc52 # v1.4.4
+        if: github.event_name != 'workflow_call'
+        with:
+          file: cobertura.xml
+          language: Rust
+          label: code-coverage/cargo

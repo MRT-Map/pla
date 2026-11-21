@@ -5,9 +5,8 @@ fn main() -> Result<(), std::io::Error> {
     let glam_file = std::fs::read_to_string(format!("src/node_type/{EMATH_HIGHEST_VERSION}.rs"))?;
     let replace_from = format!("use {EMATH_HIGHEST_VERSION} as emath;");
     for target in [
-        "emath036",
-        "emath035", "emath034", "emath033", "emath032", "emath031", "emath030", "emath029",
-        "emath028",
+        "emath036", "emath035", "emath034", "emath033", "emath032", "emath031", "emath030",
+        "emath029", "emath028",
     ] {
         std::fs::write(
             format!("src/node_type/{target}.rs"),

@@ -16,6 +16,8 @@ mod emath034;
 mod emath035;
 #[cfg(feature = "emath036")]
 mod emath036;
+#[cfg(feature = "emath037")]
+mod emath037;
 #[cfg(feature = "bezier-epaint028")]
 mod epaint028;
 #[cfg(feature = "bezier-epaint029")]
@@ -34,6 +36,8 @@ mod epaint034;
 mod epaint035;
 #[cfg(feature = "bezier-epaint036")]
 mod epaint036;
+#[cfg(feature = "bezier-epaint037")]
+mod epaint037;
 
 use std::{
     error::Error,

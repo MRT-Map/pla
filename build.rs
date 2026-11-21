@@ -1,10 +1,11 @@
 fn main() -> Result<(), std::io::Error> {
-    const EMATH_HIGHEST_VERSION: &str = "emath036";
-    const BEZIER_EPAINT_HIGHEST_VERSION: &str = "epaint036";
+    const EMATH_HIGHEST_VERSION: &str = "emath037";
+    const BEZIER_EPAINT_HIGHEST_VERSION: &str = "epaint037";
 
     let glam_file = std::fs::read_to_string(format!("src/node_type/{EMATH_HIGHEST_VERSION}.rs"))?;
     let replace_from = format!("use {EMATH_HIGHEST_VERSION} as emath;");
     for target in [
+        "emath036",
         "emath035", "emath034", "emath033", "emath032", "emath031", "emath030", "emath029",
         "emath028",
     ] {
@@ -19,6 +20,7 @@ fn main() -> Result<(), std::io::Error> {
         std::fs::read_to_string(format!("src/node_type/{BEZIER_EPAINT_HIGHEST_VERSION}.rs"))?;
     let replace_from = format!("use {BEZIER_EPAINT_HIGHEST_VERSION} as epaint;");
     for target in [
+        "epaint036",
         "epaint035",
         "epaint034",
         "epaint033",

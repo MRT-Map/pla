@@ -39,6 +39,7 @@ emath033 = { version = "0.33", default-features = false, optional = true, packag
 emath034 = { version = "0.34", default-features = false, optional = true, package = "emath" }
 emath035 = { version = "0.35", default-features = false, optional = true, package = "emath" }
 emath036 = { version = "0.36", default-features = false, optional = true, package = "emath" }
+emath037 = { version = "0.37", default-features = false, optional = true, package = "emath" }
 
 epaint028 = { version = "0.28", default-features = false, optional = true, package = "epaint" }
 epaint029 = { version = "0.29", default-features = false, optional = true, package = "epaint" }
@@ -49,6 +50,7 @@ epaint033 = { version = "0.33", default-features = false, optional = true, packa
 epaint034 = { version = "0.34", default-features = false, optional = true, package = "epaint" }
 epaint035 = { version = "0.35", default-features = false, optional = true, package = "epaint" }
 epaint036 = { version = "0.36", default-features = false, optional = true, package = "epaint" }
+epaint037 = { version = "0.37", default-features = false, optional = true, package = "epaint" }
 
 [dev-dependencies]
 proptest = "=1.12.0"
@@ -86,7 +88,8 @@ emath033 = ["dep:emath033", "duplicate"]
 emath034 = ["dep:emath034", "duplicate"]
 emath035 = ["dep:emath035", "duplicate"]
 emath036 = ["dep:emath036", "duplicate"]
-emath = ["emath036"]
+emath037 = ["dep:emath037", "duplicate"]
+emath = ["emath037"]
 
 bezier-epaint028 = ["dep:epaint028", "emath028"]
 bezier-epaint029 = ["dep:epaint029", "emath029"]
@@ -97,7 +100,8 @@ bezier-epaint033 = ["dep:epaint033", "emath033"]
 bezier-epaint034 = ["dep:epaint034", "emath034"]
 bezier-epaint035 = ["dep:epaint035", "emath035"]
 bezier-epaint036 = ["dep:epaint036", "emath036"]
-bezier-epaint = ["bezier-epaint036"]
+bezier-epaint037 = ["dep:epaint037", "emath037"]
+bezier-epaint = ["bezier-epaint037"]
 
 [lints.rust]
 future_incompatible = "deny"
